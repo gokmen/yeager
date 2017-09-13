@@ -1,0 +1,9 @@
+name: yeager
+version: 0.1.0
+
+authors:
+  - Gokmen Goksel <gokmen@goksel.me>
+
+crystal: 0.23.1
+
+license: MIT
