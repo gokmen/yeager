@@ -20,11 +20,11 @@ module Yeager
   # # Run a route on router handler which will return nil or an
   # # Hash(Symbol | String => String) if there is a match and will call
   # # the provided block for the path
-  # router.run "/foo" # -> {:path => "/foo"} and prints "Hello from /foo!"
-  # router.run "/bar" # -> nil
+  # router.handle "/foo" # -> {:path => "/foo"} and prints "Hello from /foo!"
+  # router.handle "/bar" # -> nil
   # ```
   #
-  class RouterHandler(T) < Router
+  class RouterHandler(T) < Yeager::Router
     # Holds the handlers in an Hash like;
     # { "/foo/:bar" => Proc(T) }
     protected property handlers : Hash(String, T) = Hash(String, T).new
@@ -67,13 +67,13 @@ module Yeager
     # r = Yeager::RouterHandler(String -> Nil).new
     # called = false
     # r.add "/", ->(name : String) { p "Hello #{name}!" }
-    # r.run "/", "user"
+    # r.handle "/", "user"
     # ```
     #
     # will print `"Hello user!"`
     #
-    def run(url : String, *args) : Nil | Result
-      if res = super url
+    def handle(url : String, *args) : Nil | Yeager::Result
+      if res = run url
         handlers[res[:path]].call *args
       end
       res
@@ -90,13 +90,13 @@ module Yeager
     #   p "Hello #{params["name"]}!"
     # }
     #
-    # r.run("/user", params = true)
+    # r.handle("/user", params = true)
     # ```
     #
     # will print `"Hello user!"`
     #
-    def run(url : String, params : Bool) : Nil | Result
-      if res = super url
+    def handle(url : String, params : Bool) : Nil | Yeager::Result
+      if res = run url
         handlers[res[:path]].call (params == true ? res : empty_result)
       end
       res
@@ -113,13 +113,13 @@ module Yeager
     #   p "Hello #{user_type} #{params["name"]}!"
     # }
     #
-    # r.run("/user", params = true, "test")
+    # r.handle("/user", params = true, "test")
     # ```
     #
     # will print `"Hello test user!"`
     #
-    def run(url : String, params : Bool, *args) : Nil | Result
-      if res = super url
+    def handle(url : String, params : Bool, *args) : Nil | Yeager::Result
+      if res = run url
         handlers[res[:path]].call (params == true ? res : empty_result), *args
       end
       res

@@ -19,12 +19,12 @@ module Yeager
       r.add "/", ->{ called = true }
       r.routes.should eq({"/" => ["/"]})
 
-      r.run("/").should eq({:path => "/"})
+      r.handle("/").should eq({:path => "/"})
       called.should be_true
 
       called = false
 
-      r.run("/foo").should be_nil
+      r.handle("/foo").should be_nil
       called.should be_false
     end
 
@@ -40,7 +40,7 @@ module Yeager
 
       r.routes.should eq({"/" => ["/"]})
 
-      r.run("/", "test").should eq({:path => "/"})
+      r.handle("/", "test").should eq({:path => "/"})
 
       called.should be_true
     end
@@ -58,7 +58,7 @@ module Yeager
 
       r.routes.should eq({"/" => ["/"]})
 
-      r.run("/", "test", 123).should eq({:path => "/"})
+      r.handle("/", "test", 123).should eq({:path => "/"})
 
       called.should be_true
     end
@@ -75,7 +75,7 @@ module Yeager
 
       r.routes.should eq({"/:name" => [":name"]})
 
-      r.run("/test", params = true).should eq({:path => "/:name", "name" => "test"})
+      r.handle("/test", params = true).should eq({:path => "/:name", "name" => "test"})
 
       called.should be_true
     end
@@ -92,7 +92,7 @@ module Yeager
 
       r.routes.should eq({"/:name" => [":name"]})
 
-      r.run("/test", params = false).should eq({:path => "/:name", "name" => "test"})
+      r.handle("/test", params = false).should eq({:path => "/:name", "name" => "test"})
 
       called.should be_true
     end
@@ -115,7 +115,7 @@ module Yeager
         "/:name" => [":name"],
       })
 
-      r.run("/test", params = true, "Hello").should eq({
+      r.handle("/test", params = true, "Hello").should eq({
         :path  => "/:name",
         "name" => "test",
       })
@@ -138,7 +138,7 @@ module Yeager
         "/:name" => [":name"],
       })
 
-      r.run("/test", params = false, "Hello").should eq({
+      r.handle("/test", params = false, "Hello").should eq({
         :path  => "/:name",
         "name" => "test",
       })
