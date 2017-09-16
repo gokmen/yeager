@@ -2,46 +2,41 @@ require "json"
 require "http"
 
 module Yeager
-  private alias Handler = HTTPRequest | HTTPRequest, HTTPResponse -> Void
+  private alias Handler = HTTP::Request | HTTP::Request, HTTP::Server::Response -> Void
   private alias Handlers = Hash(String, Handler)
 
-  private alias HTTPRouters = Hash(String, Yeager::Router)
+  private alias HTTPRouters = Hash(String, Router)
   private alias HTTPHandlers = Hash(String, Handlers)
 
-  private alias CallbackType = HTTPRequest, HTTPResponse -> Void
+  private alias CallbackType = HTTP::Request, HTTP::Server::Response -> Void
 
   HTTP_METHODS = %w(get post put patch delete options)
   DEFAULT_PORT = 3000
   DEFAULT_HOST = "0.0.0.0"
 
-  class HTTPRequest
-    getter params
-
-    def initialize(@request : HTTP::Request, @params : Result)
-    end
-
-    forward_missing_to @request
+  class HTTP::Server
+    getter host
   end
 
-  class HTTPResponse
-    def initialize(@response : HTTP::Server::Response)
-    end
+  class HTTP::Request
+    setter params : Yeager::Result = Yeager::Result.new
+    getter params
+  end
 
+  class HTTP::Server::Response
     def send(data : String)
-      @response.print data
+      print data
     end
 
     def json(data : JSON::Type)
-      @response.content_type = "application/json"
-      @response.print data.to_json
+      self.content_type = "application/json"
+      print data.to_json
     end
 
     def status(code : Int32)
-      @response.status_code = code
+      self.status_code = code
       self
     end
-
-    forward_missing_to @response
   end
 
   class HTTPHandler
