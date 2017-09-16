@@ -17,8 +17,8 @@ end
 # If you have a defined HTTP::Server already you can
 # use app.handler after this point instead of running
 # the server of the app.
-app.listen 3000 do |url|
-  print "Example app listening on #{url}!"
+app.listen 3000 do
+  print "Example app listening on 0.0.0.0:3000!"
 end
 
 # Example usage for using the app.handler

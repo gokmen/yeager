@@ -10,9 +10,11 @@ module Yeager
 
   private alias CallbackType = HTTP::Request, HTTP::Server::Response -> Void
 
-  HTTP_METHODS = %w(get post put patch delete options)
-  DEFAULT_PORT = 3000
-  DEFAULT_HOST = "0.0.0.0"
+  HTTP_METHODS    = %w(get post put head patch delete)
+  DEFAULT_PORT    = 3000
+  DEFAULT_HOST    = "0.0.0.0"
+  NOT_FOUND_TEXT  = "404 - Not found :("
+  NOT_IMPLEMENTED = "501 - Not implemented :("
 
   class HTTP::Server
     getter host
@@ -47,13 +49,14 @@ module Yeager
 
     def call(ctx)
       path, method = parse_request ctx
-      response = HTTPResponse.new(ctx.response)
 
-      if path && (params = @routers[method].run path)
-        request = HTTPRequest.new(ctx.request, params)
-        @handlers[method][params[:path]].call request, response
+      if !@handlers.has_key? method
+        ctx.response.status(501).send(NOT_IMPLEMENTED)
+      elsif path && (params = @routers[method].run path)
+        ctx.request.params = params
+        @handlers[method][params[:path]].call ctx.request, ctx.response
       else
-        response.status(404).send("404 - Not found :(")
+        ctx.response.status(404).send(NOT_FOUND_TEXT)
       end
 
       ctx
@@ -66,25 +69,24 @@ module Yeager
 
   class App
     protected property handlers = HTTPHandlers.new
-    getter handler
+    getter handler, routers
 
     def initialize
       @routers = HTTPRouters.new
       @handler = HTTPHandler.new(@routers, @handlers)
 
       {% for name in HTTP_METHODS %}
-        @routers[{{ name.upcase }}] = Router.new
+        @routers[{{ name.upcase }}] = Yeager::Router.new
         @handlers[{{ name.upcase }}] = Handlers.new
       {% end %}
     end
 
     {% for name in HTTP_METHODS %}
-
       def {{name.id}}(path : String, &cb : Proc(Void))
         register {{ name.upcase }}, path, &cb
       end
 
-      def {{name.id}}(path : String, &cb : HTTPRequest -> _)
+      def {{name.id}}(path : String, &cb : HTTP::Request -> _)
         register {{ name.upcase }}, path, &cb
       end
 
@@ -108,13 +110,9 @@ module Yeager
       server.listen
     end
 
-    def listen(port = DEFAULT_PORT, host = DEFAULT_HOST, &cb : String | Void ->)
-      spawn do
-        listen port, host
-      end
-      Fiber.yield
-      cb.call "#{host}:#{port}"
-      sleep
+    def listen(port = DEFAULT_PORT, host = DEFAULT_HOST, &cb : -> _)
+      cb.call
+      listen port, host
     end
   end
 end
