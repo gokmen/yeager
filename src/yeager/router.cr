@@ -29,7 +29,7 @@ module Yeager
 
     private def split(s : String) : Array(String)
       return [s] if s.size == 1 && s[0] == BLOCK
-      s.downcase.lchop(BLOCK).rchop(BLOCK).split BLOCK
+      s.lchop(BLOCK).rchop(BLOCK).split BLOCK
     end
 
     # Adds provided path into the `routes`
@@ -82,9 +82,9 @@ module Yeager
     # }
     # ```
     #
-    def run(url : String) : Nil | Result
+    def run(url : String) : Nil | Yeager::Result
       blocks = split url
-      params = Result.new
+      params = Yeager::Result.new
 
       routes_end = routes.size - 1
       routes.each_with_index do |ke_block, k_index|
@@ -111,6 +111,10 @@ module Yeager
           end
         end
       end
+    end
+
+    def handle(url : String) : Nil | Yeager::Result
+      run url
     end
   end
 end
