@@ -113,6 +113,7 @@ module Yeager
       end
     end
 
+    # Alias for #run
     def handle(url : String) : Nil | Yeager::Result
       run url
     end

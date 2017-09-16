@@ -1,8 +1,8 @@
 # Yeager
 
-Simple router implementation for Crystal, named after "Router Man" -
-[William Yeager](https://en.wikipedia.org/wiki/William_Yeager). It supports
-basic router requirements with speed but not battle-tested.
+Simple router implementation w/ http server for Crystal, named after
+"Router Man" - [William Yeager](https://en.wikipedia.org/wiki/William_Yeager).
+It supports basic router requirements with speed but not battle-tested.
 
 [![Build Status](https://img.shields.io/travis/gokmen/yeager/master.svg)](https://travis-ci.org/gokmen/yeager)
 
@@ -37,13 +37,47 @@ router.run "/bar"       # -> nil
 
 ```
 
-You can checkout [tests](https://github.com/gokmen/yeager/blob/master/spec/yeager_spec.cr)
+or to create a simple web server with `Yeager::App`
+
+```
+require "yeager"
+
+# Create the app
+app = Yeager::App.new
+
+# Add GET handler for "/" to response back with "Hello world!"
+app.get "/" do |req, res|
+  res.send "Hello world!"
+end
+
+# Add another GET handler for "/:user"
+# which will render "Hello yeager!" for "/yeager" route
+app.get "/:user" do |req, res|
+  res.send "Hello #{req.params["user"]}!"
+end
+
+# Start the app on port 3000
+app.listen 3000 do
+  print "Example app listening on 0.0.0.0:3000!"
+end
+```
+
+You can checkout [specs](https://github.com/gokmen/yeager/blob/master/spec)
 for more examples and documentation can be accessed from [here](https://yeager.now.sh).
 
 ## Todo
 
+### Router
+
  - Add optional argument support like `/foo/:bar?`
  - Add glob support like `/foo/*`
+
+### App
+
+ - Add middleware support
+ - Add chain handlers support with a.k.a `next`
+ - Add parse form data support
+ - Handle WebSocket requests
 
 ## Contributing
 
