@@ -2,13 +2,12 @@ require "json"
 require "http"
 
 module Yeager
-  private alias Handler = HTTP::Request | HTTP::Request, HTTP::Server::Response -> Void
-  private alias Handlers = Hash(String, Handler)
+  private alias NextCallback = Proc(Nil)
+  private alias Handler = Proc(HTTP::Request, HTTP::Server::Response, NextCallback, Nil)
+  private alias Handlers = Hash(String, Array(Handler))
 
   private alias HTTPRouters = Hash(String, Yeager::Router)
   private alias HTTPHandlers = Hash(String, Handlers)
-
-  private alias CallbackType = HTTP::Request, HTTP::Server::Response -> Void
 
   # Supported HTTP methods of `Yeager::HTTPHandler`
   HTTP_METHODS = %w(get post put head patch delete)
@@ -18,6 +17,7 @@ module Yeager
   DEFAULT_HOST    = "0.0.0.0"
   NOT_FOUND_TEXT  = "404 - Not found :("
   NOT_IMPLEMENTED = "501 - Not implemented :("
+  NEXT_HANDLER    = ->{}
 
   # Extend HTTP::Server to add getter for `#host`
   class HTTP::Server
@@ -79,14 +79,22 @@ module Yeager
     def initialize(@routers : HTTPRouters, @handlers : HTTPHandlers)
     end
 
-    def call(ctx)
+    def call(ctx, index = 0)
       path, method = parse_request ctx
 
       if !@handlers.has_key? method
         ctx.response.status(501).send(NOT_IMPLEMENTED)
       elsif path && (params = @routers[method].run path)
         ctx.request.params = params
-        @handlers[method][params[:path]].call ctx.request, ctx.response
+        handler = @handlers[method][params[:path]]
+        next_handler = NEXT_HANDLER
+        if handler.size > index + 1
+          next_handler = ->{
+            self.call(ctx, index + 1)
+            return
+          }
+        end
+        handler[index].call ctx.request, ctx.response, next_handler
       else
         ctx.response.status(404).send(NOT_FOUND_TEXT)
       end
@@ -171,13 +179,14 @@ module Yeager
         register {{ name.upcase }}, path, &cb
       end
 
-      def {{name.id}}(path : String, &cb : CallbackType)
+      def {{name.id}}(path : String, &cb : Handler)
         register {{ name.upcase }}, path, &cb
       end
     {% end %}
 
-    private def register(method : String, path : String, &cb : CallbackType)
-      @handlers[method][path] = cb
+    private def register(method : String, path : String, &cb : Handler)
+      @handlers[method][path] ||= [] of Handler
+      @handlers[method][path] << cb
       @routers[method].add path
     end
 
