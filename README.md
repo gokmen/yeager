@@ -77,7 +77,7 @@ for more examples and documentation can be accessed from [here](https://yeager.n
 ### App
 
  - Add middleware support
- - Add chain handlers support with a.k.a `next`
+ - ~~Add chain handlers support with a.k.a `next`~~
  - Add parse form data support
  - Handle WebSocket requests
 
