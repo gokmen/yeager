@@ -150,5 +150,32 @@ module Yeager
         server.close
       end
     end
+
+    describe "Next" do
+      it "should support next callback" do
+        app = Yeager::App.new
+
+        app.get "/" do |req, res, next_cb|
+          res.send TEXT
+          next_cb.call
+        end
+
+        app.get "/" do |req, res|
+          res.send TEXT
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [app.handler])
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.body.should eq(TEXT + TEXT)
+
+        server.close
+      end
+    end
   end
 end
