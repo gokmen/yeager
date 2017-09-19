@@ -155,12 +155,14 @@ module Yeager
       it "should support next callback" do
         app = Yeager::App.new
 
-        app.get "/" do |req, res, next_cb|
+        app.get "/" do |req, res, continue|
+          req["foo"] = "bar"
           res.send TEXT
-          next_cb.call
+          continue.call
         end
 
         app.get "/" do |req, res|
+          req["foo"].should eq("bar")
           res.send TEXT
         end
 

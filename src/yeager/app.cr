@@ -25,9 +25,14 @@ module Yeager
   end
 
   # Extend HTTP::Request to add {s,g}etter for `#params`
+  # and add @env property to hold sharable data between handlers
   class HTTP::Request
+    property env = {} of String => String
+
     setter params : Yeager::Result = Yeager::Result.new
     getter params
+
+    forward_missing_to @env
   end
 
   # Extend HTTP::Server::Response to add following methods;
@@ -84,7 +89,10 @@ module Yeager
 
       if !@handlers.has_key? method
         ctx.response.status(501).send(NOT_IMPLEMENTED)
-      elsif path && (params = @routers[method].run path)
+        return ctx
+      end
+
+      if path && (params = @routers[method].run path)
         ctx.request.params = params
         handler = @handlers[method][params[:path]]
         next_handler = NEXT_HANDLER
@@ -95,10 +103,10 @@ module Yeager
           }
         end
         handler[index].call ctx.request, ctx.response, next_handler
-      else
-        ctx.response.status(404).send(NOT_FOUND_TEXT)
+        return ctx
       end
 
+      ctx.response.status(404).send(NOT_FOUND_TEXT)
       ctx
     end
 
