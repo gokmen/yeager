@@ -42,7 +42,7 @@ module Yeager
   # }
   # ```
   #
-  alias Result = Hash(String | Symbol, String)
+  alias Result = Hash(String | Symbol, String | Nil)
 
   BLOCK = '/'
   PARAM = ':'
