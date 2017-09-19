@@ -113,9 +113,82 @@ module Yeager
       end
     end
 
+    # Splits the provided url, finds same sized routes and walks over all
+    # of them. Will keep matched ones in an Array, which will include the
+    # parameters (if defined in the route) in the first match with the
+    # `:path` in a `Result` instance, if not found any match will return
+    # `nil` instead.
+    #
+    # For given example;
+    #
+    # ```
+    # require "yeager"
+    # router = Yeager::Router.new
+    # router.add "/foo/:hello"
+    # router.add "/foo/:bar"
+    # router.run_multiple "/foo/world"
+    # ```
+    #
+    # will return an `Array` of `Result` instance with following content;
+    #
+    # ```
+    # [
+    #   {
+    #     "hello" => "world",
+    #     :path   => "/foo/:hello",
+    #   },
+    #   {
+    #     "bar" => "world",
+    #     :path => "/foo/:bar",
+    #   },
+    # ]
+    # ```
+    #
+    def run_multiple(url : String) : Nil | Array(Yeager::Result)
+      blocks = split url
+      params = Array(Yeager::Result).new
+
+      routes_end = routes.size - 1
+      routes.each_with_index do |ke_block, k_index|
+        k_path, k_block = ke_block
+        next if k_block.size != blocks.size
+
+        res = Yeager::Result.new
+
+        block_end = blocks.size - 1
+        k_block.each_with_index do |block, index|
+          if (param = block[0] == PARAM) || block == blocks[index]
+            if param
+              res[block.lchop PARAM] = blocks[index]
+            end
+
+            if index == block_end
+              res[:path] = k_path
+              params << res
+            end
+
+            next
+          else
+            break
+          end
+
+          if k_index == routes_end
+            return
+          end
+        end
+      end
+
+      return params.size > 0 ? params : nil
+    end
+
     # Alias for #run
     def handle(url : String) : Nil | Yeager::Result
       run url
+    end
+
+    # Alias for #run_multiple
+    def handle_multiple(url : String) : Nil | Yeager::Result
+      run_multiple url
     end
   end
 end
