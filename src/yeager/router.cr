@@ -56,11 +56,10 @@ module Yeager
       routes[path] = split path
     end
 
-    # Splits the provided url, finds same sized routes
-    # and walks over them until find a match and will return
-    # the parameters (if defined in the route) in the first match
-    # with the `:path` in a `Result` instance, if not found a match
-    # will return `nil` instead.
+    # By using the run_multiple splits the provided url, and walks over
+    # routes until find a match and will return the parameters (if defined
+    # in the route) in the first match with the `:path` in a `Result`
+    # instance, if not found a match will return `nil` instead.
     #
     # `Result` will include the matched `:path` and the parameters.
     #
@@ -83,35 +82,8 @@ module Yeager
     # ```
     #
     def run(url : String) : Nil | Yeager::Result
-      blocks = split url
-      params = Yeager::Result.new
-
-      routes_end = routes.size - 1
-      routes.each_with_index do |ke_block, k_index|
-        k_path, k_block = ke_block
-        next if k_block.size != blocks.size
-
-        block_end = blocks.size - 1
-
-        k_block.each_with_index do |block, index|
-          if (param = block[0] == PARAM) || block == blocks[index]
-            params[block.lchop PARAM] = blocks[index] if param
-
-            if index == block_end
-              params[:path] = k_path
-              return params
-            end
-
-            next
-          else
-            break
-          end
-
-          if k_index == routes_end
-            return
-          end
-        end
-      end
+      res = run_multiple url, once = true
+      res ? res[0] : nil
     end
 
     # Splits the provided url, finds same sized routes and walks over all
