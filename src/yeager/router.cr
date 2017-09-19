@@ -92,8 +92,9 @@ module Yeager
         next if k_block.size != blocks.size
 
         block_end = blocks.size - 1
+
         k_block.each_with_index do |block, index|
-          if block == blocks[index] || (param = block[0] == PARAM)
+          if (param = block[0] == PARAM) || block == blocks[index]
             params[block.lchop PARAM] = blocks[index] if param
 
             if index == block_end
@@ -102,12 +103,12 @@ module Yeager
             end
 
             next
+          else
+            break
           end
 
           if k_index == routes_end
             return
-          else
-            break
           end
         end
       end
@@ -158,9 +159,7 @@ module Yeager
         block_end = blocks.size - 1
         k_block.each_with_index do |block, index|
           if (param = block[0] == PARAM) || block == blocks[index]
-            if param
-              res[block.lchop PARAM] = blocks[index]
-            end
+            res[block.lchop PARAM] = blocks[index] if param
 
             if index == block_end
               res[:path] = k_path
