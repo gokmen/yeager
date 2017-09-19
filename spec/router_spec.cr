@@ -180,5 +180,87 @@ module Yeager
         "post"     => "bar",
       })
     end
+
+    it "should support handling multiple routes" do
+      r = Yeager::Router.new
+
+      r.add "/:post"
+      r.add "/:category"
+      r.add "/baz"
+      r.add "/bar/bak"
+      r.add "/foo/:post"
+      r.add "/foo/:category"
+      r.add "/foo/:category/user"
+
+      r.routes.should eq({
+        "/:post"              => [":post"],
+        "/:category"          => [":category"],
+        "/baz"                => ["baz"],
+        "/bar/bak"            => ["bar", "bak"],
+        "/foo/:post"          => ["foo", ":post"],
+        "/foo/:category"      => ["foo", ":category"],
+        "/foo/:category/user" => ["foo", ":category", "user"],
+      })
+
+      r.run_multiple("/gokmen").should eq([
+        {
+          :path  => "/:post",
+          "post" => "gokmen",
+        },
+        {
+          :path      => "/:category",
+          "category" => "gokmen",
+        },
+      ])
+
+      r.run_multiple("/foo/gokmen").should eq([
+        {
+          :path  => "/foo/:post",
+          "post" => "gokmen",
+        },
+        {
+          :path      => "/foo/:category",
+          "category" => "gokmen",
+        },
+      ])
+
+      r.run_multiple("/bar/baz").should be_nil
+      r.run_multiple("/baz").should eq([
+        {
+          :path  => "/:post",
+          "post" => "baz",
+        },
+        {
+          :path      => "/:category",
+          "category" => "baz",
+        },
+
+        {
+          :path => "/baz",
+        },
+      ])
+
+      r.run_multiple("/bar/bak").should eq([
+        {
+          :path => "/bar/bak",
+        },
+      ])
+
+      r.run_multiple("/foo/gokmen/user").should eq([
+        {
+          :path      => "/foo/:category/user",
+          "category" => "gokmen",
+        },
+      ])
+
+      r.run_multiple("/foo/gokmen/test").should be_nil
+
+      r.run_multiple("/foo/:category/user").should eq([
+        {
+          :path      => "/foo/:category/user",
+          "category" => ":category",
+        },
+      ])
+    end
   end
 end
