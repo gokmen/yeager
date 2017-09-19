@@ -262,5 +262,51 @@ module Yeager
         },
       ])
     end
+
+    it "should support optional parameters" do
+      r = Yeager::Router.new
+
+      r.add "/user/:id?"
+      r.add "/foo/:page?/bar/:book?"
+
+      r.routes.should eq({
+        "/user/:id?"             => ["user", ":id?"],
+        "/foo/:page?/bar/:book?" => ["foo", ":page?", "bar", ":book?"],
+      })
+
+      r.run_multiple("/user/12").should eq([
+        {
+          :path => "/user/:id?",
+          "id"  => "12",
+        },
+      ])
+
+      r.run_multiple("/user").should eq([
+        {
+          :path => "/user/:id?",
+          "id"  => nil,
+        },
+      ])
+
+      r.run_multiple("/users").should be_nil
+
+      r.run_multiple("/foo/123/bar/bttf").should eq([
+        {
+          :path  => "/foo/:page?/bar/:book?",
+          "page" => "123",
+          "book" => "bttf",
+        },
+      ])
+
+      r.run_multiple("/foo/123/bar").should eq([
+        {
+          :path  => "/foo/:page?/bar/:book?",
+          "page" => "123",
+          "book" => nil,
+        },
+      ])
+
+      r.run_multiple("/foo/123").should be_nil
+    end
   end
 end

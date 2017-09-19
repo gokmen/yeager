@@ -134,7 +134,7 @@ module Yeager
         app = Yeager::App.new
 
         app.get "/:name" do |req, res|
-          res.send TEXT + req.params["name"]
+          res.send TEXT + req.params["name"].as(String)
         end
 
         server = HTTP::Server.new(HOST, PORT, [app.handler])
