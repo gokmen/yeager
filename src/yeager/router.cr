@@ -145,39 +145,43 @@ module Yeager
     # ]
     # ```
     #
-    def run_multiple(url : String) : Nil | Array(Yeager::Result)
+    def run_multiple(url : String, once : Bool = false) : Nil | Array(Yeager::Result)
       blocks = split url
-      params = Array(Yeager::Result).new
+      params = [] of Yeager::Result
+      match = Bool
 
-      routes_end = routes.size - 1
-      routes.each_with_index do |ke_block, k_index|
-        k_path, k_block = ke_block
-        next if k_block.size != blocks.size
+      routes.each do |ro_block|
+        r_path, r_block = ro_block
 
         res = Yeager::Result.new
 
-        block_end = blocks.size - 1
-        k_block.each_with_index do |block, index|
-          if (param = block[0] == PARAM) || block == blocks[index]
-            res[block.lchop PARAM] = blocks[index] if param
+        merged = r_block.zip? blocks
+        merged.each do |block|
+          match = false
+          key, value = block
 
-            if index == block_end
-              res[:path] = k_path
-              params << res
-            end
+          is_nil = value.nil?
+          optional = key[-1] == OPTIONAL
 
-            next
-          else
-            break
-          end
+          break if is_nil && !optional
 
-          if k_index == routes_end
-            return
-          end
+          param = key[0] == PARAM
+          is_same = key == value
+
+          break if !param && !is_same || merged.size < blocks.size
+
+          res[key.lchop(PARAM).rchop(OPTIONAL)] = value if param
+          match = true
+        end
+
+        if match
+          res[:path] = r_path
+          params << res
+          return params if once
         end
       end
 
-      return params.size > 0 ? params : nil
+      params.size > 0 ? params : nil
     end
 
     # Alias for #run
