@@ -122,27 +122,36 @@ module Yeager
       params = [] of Yeager::Result
       match = Bool
 
+      # puts "\ntesting #{url};"
       routes.each do |ro_block|
         r_path, r_block = ro_block
+        # puts "\n  on route #{r_path};"
 
         res = Yeager::Result.new
 
-        merged = r_block.zip? blocks
-        merged.each do |block|
+        r_block.size.times do |index|
           match = false
-          key, value = block
+          key, value = r_block[index], blocks[index]?
+          # puts "    - key: #{key} value: #{value}"
 
           is_nil = value.nil?
-          optional = key[-1] == OPTIONAL
+          is_optional = key[-1] == OPTIONAL
+          # puts "    - is_nil? #{is_nil} : is_optional? #{is_optional}"
 
-          break if is_nil && !optional
+          break if is_nil && !is_optional
 
-          param = key[0] == PARAM
+          is_param = key[0] == PARAM
+          is_glob = key[0] == GLOB
           is_same = key == value
+          # puts "    - is_same? #{is_same} : is_param? #{is_param} : is_glob? #{is_glob}"
 
-          break if !param && !is_same || merged.size < blocks.size
+          break if !is_glob && !is_param && !is_same
+          break if index == r_block.size - 1 &&
+                   !is_glob && r_block.size < blocks.size
 
-          res[key.lchop(PARAM).rchop(OPTIONAL)] = value if param
+          res[key.lchop(PARAM).rchop(OPTIONAL)] = value if is_param
+
+          # puts "    = -- -match!- -- #{r_path}\n "
           match = true
         end
 

@@ -44,6 +44,7 @@ module Yeager
   #
   alias Result = Hash(String | Symbol, String | Nil)
 
+  GLOB     = '*'
   BLOCK    = '/'
   PARAM    = ':'
   OPTIONAL = '?'
