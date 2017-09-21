@@ -308,5 +308,36 @@ module Yeager
 
       r.run_multiple("/foo/123").should be_nil
     end
+
+    it "should support * glob pattern" do
+      r = Yeager::Router.new
+
+      r.add "/user/*"
+      r.add "/user/*/bar"
+
+      r.routes.should eq({
+        "/user/*"     => ["user", "*"],
+        "/user/*/bar" => ["user", "*", "bar"],
+      })
+
+      r.run_multiple("/user/12").should eq([
+        {:path => "/user/*"},
+      ])
+
+      r.run_multiple("/user").should be_nil
+
+      r.run_multiple("/user/12/bar").should eq([
+        {:path => "/user/*"},
+        {:path => "/user/*/bar"},
+      ])
+      r.run_multiple("/user/foo/bar/baz/test").should eq([
+        {:path => "/user/*"},
+      ])
+      r.run_multiple("/user/foo/bak/bar").should eq([
+        {:path => "/user/*"},
+      ])
+      r.run_multiple("/users").should be_nil
+      r.run_multiple("/foo/123").should be_nil
+    end
   end
 end
