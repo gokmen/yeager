@@ -356,11 +356,13 @@ module Yeager
     it "should support mixed features" do
       r = Yeager::Router.new
 
+      r.add "/*"
       r.add "/user/:id?"
       r.add "/foo/:page?/*/:book?"
       r.add "/create/*/:type?"
 
       r.routes.should eq({
+        "/*"                   => ["*"],
         "/user/:id?"           => ["user", ":id?"],
         "/foo/:page?/*/:book?" => ["foo", ":page?", "*", ":book?"],
         "/create/*/:type?"     => ["create", "*", ":type?"],
@@ -368,12 +370,18 @@ module Yeager
 
       r.run_multiple("/user/12").should eq([
         {
+          :path => "/*",
+        },
+        {
           :path => "/user/:id?",
           "id"  => "12",
         },
       ])
 
       r.run_multiple("/foo/blank/bar/test").should eq([
+        {
+          :path => "/*",
+        },
         {
           :path  => "/foo/:page?/*/:book?",
           "page" => "blank",
@@ -383,6 +391,9 @@ module Yeager
 
       r.run_multiple("/foo/bar/test").should eq([
         {
+          :path => "/*",
+        },
+        {
           :path  => "/foo/:page?/*/:book?",
           "page" => "bar",
           "book" => nil,
@@ -391,6 +402,9 @@ module Yeager
 
       r.run_multiple("/create/new/user").should eq([
         {
+          :path => "/*",
+        },
+        {
           :path  => "/create/*/:type?",
           "type" => "user",
         },
@@ -398,12 +412,19 @@ module Yeager
 
       r.run_multiple("/create/new").should eq([
         {
+          :path => "/*",
+        },
+        {
           :path  => "/create/*/:type?",
           "type" => nil,
         },
       ])
 
-      r.run_multiple("/create/new/user/test").should be_nil
+      r.run_multiple("/create/new/user/test").should eq([
+        {
+          :path => "/*",
+        },
+      ])
     end
   end
 end
