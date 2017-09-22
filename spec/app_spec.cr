@@ -141,25 +141,30 @@ module Yeager
     end
 
     describe "Request" do
-      it "should provide params" do
-        app = Yeager::App.new
+      {% for name in Yeager::HTTP_METHODS %}
 
-        app.get "/:name" do |req, res|
-          res.send TEXT + req.params["name"].as(String)
+        it "should provide params for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          app.{{ name.id }} "/:name" do |req, res|
+            res.send TEXT + req.params["name"].as(String)
+          end
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT + "/Yeager"
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT + "Yeager")
+          {% end %}
+          server.close
         end
 
-        server = HTTP::Server.new(HOST, PORT, [app.handler])
-        spawn do
-          server.listen
-        end
-
-        Fiber.yield
-
-        response = HTTP::Client.get ROOT + "/Yeager"
-        response.body.should eq(TEXT + "Yeager")
-
-        server.close
-      end
+      {% end %}
     end
 
     describe "Next" do
