@@ -52,81 +52,92 @@ module Yeager
     end
 
     describe "Response" do
-      it "should support send" do
-        app = Yeager::App.new
+      {% for name in Yeager::HTTP_METHODS %}
 
-        app.get "/" do |req, res|
-          res.send TEXT
+        it "should support send for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          app.{{ name.id }} "/" do |req, res|
+            res.send TEXT
+          end
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT)
+          {% end %}
+
+          server.close
         end
 
-        server = HTTP::Server.new(HOST, PORT, [app.handler])
-        spawn do
-          server.listen
+        it "should support json for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          app.{{ name.id }} "/" do |req, res|
+            res.status(200).json({"Hello" => "world!"})
+          end
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT
+          {% if name.id != "head" %}
+          response.body.should eq("{\"Hello\":\"world!\"}")
+          {% end %}
+          response.status_code.should eq(200)
+
+          server.close
         end
 
-        Fiber.yield
+        it "should support chain calls for {{ name.id.upcase }}" do
+          app = Yeager::App.new
 
-        response = HTTP::Client.get ROOT
-        response.body.should eq(TEXT)
+          app.{{ name.id }} "/200" do |req, res|
+            res.status(200).send TEXT
+          end
 
-        server.close
-      end
+          app.{{ name.id }} "/404" do |req, res|
+            res.status(404).send TEXT
+          end
 
-      it "should support json" do
-        app = Yeager::App.new
+          app.handler.class.should eq(Yeager::HTTPHandler)
+          app.routers[{{ name.upcase }}].class.should eq(Yeager::Router)
+          app.routers[{{ name.upcase }}].routes.should eq({
+            "/200" => ["200"], "/404" => ["404"],
+          })
 
-        app.get "/" do |req, res|
-          res.status(200).json({"Hello" => "world!"})
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} "#{ROOT}/200"
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT)
+          {% end %}
+          response.status_code.should eq(200)
+
+          response = HTTP::Client.{{ name.id }} "#{ROOT}/404"
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT)
+          {% end %}
+          response.status_code.should eq(404)
+
+          server.close
         end
-
-        server = HTTP::Server.new(HOST, PORT, [app.handler])
-        spawn do
-          server.listen
-        end
-
-        Fiber.yield
-
-        response = HTTP::Client.get ROOT
-        response.body.should eq("{\"Hello\":\"world!\"}")
-        response.status_code.should eq(200)
-
-        server.close
-      end
-
-      it "should support chain calls" do
-        app = Yeager::App.new
-
-        app.get "/200" do |req, res|
-          res.status(200).send TEXT
-        end
-
-        app.get "/404" do |req, res|
-          res.status(404).send TEXT
-        end
-
-        app.handler.class.should eq(Yeager::HTTPHandler)
-        app.routers["GET"].class.should eq(Yeager::Router)
-        app.routers["GET"].routes.should eq({
-          "/200" => ["200"], "/404" => ["404"],
-        })
-
-        server = HTTP::Server.new(HOST, PORT, [app.handler])
-        spawn do
-          server.listen
-        end
-
-        Fiber.yield
-
-        response = HTTP::Client.get "#{ROOT}/200"
-        response.body.should eq(TEXT)
-        response.status_code.should eq(200)
-
-        response = HTTP::Client.get "#{ROOT}/404"
-        response.body.should eq(TEXT)
-        response.status_code.should eq(404)
-
-        server.close
-      end
+      {% end %}
     end
 
     describe "Request" do
