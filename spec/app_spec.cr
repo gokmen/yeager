@@ -168,69 +168,81 @@ module Yeager
     end
 
     describe "Next" do
-      it "should support next callback" do
-        app = Yeager::App.new
+      {% for name in Yeager::HTTP_METHODS %}
 
-        app.get "/" do |req, res, continue|
-          req["foo"] = "bar"
-          res.send TEXT
-          continue.call
+        it "should support next callback for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          called = 0
+
+          app.{{ name.id }} "/" do |req, res, continue|
+            req["foo"] = "bar"
+            res.send TEXT
+            called += 1
+            continue.call
+          end
+
+          app.{{ name.id }} "/" do |req, res|
+            req["foo"].should eq("bar")
+            called += 1
+            res.send TEXT
+          end
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT + TEXT)
+          {% end %}
+          called.should eq 2
+          server.close
         end
 
-        app.get "/" do |req, res|
-          req["foo"].should eq("bar")
-          res.send TEXT
+        it "should support globs for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          called = false
+          last_page = String
+
+          app.{{ name.id }} "*" do |req, res, continue|
+            req.params["page"]?.should be_nil
+            res.send TEXT
+            continue.call
+          end
+
+          app.{{ name.id }} "*" do |req, res, continue|
+            called = true
+            continue.call
+          end
+
+          app.{{ name.id }} "/:page?" do |req, res|
+            last_page = req.params["page"]?
+            res.send TEXT
+          end
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} "#{ROOT}/foo"
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT + TEXT)
+          {% end %}
+          last_page.should eq("foo")
+          called.should be_true
+
+          server.close
         end
 
-        server = HTTP::Server.new(HOST, PORT, [app.handler])
-        spawn do
-          server.listen
-        end
-
-        Fiber.yield
-
-        response = HTTP::Client.get ROOT
-        response.body.should eq(TEXT + TEXT)
-
-        server.close
-      end
-
-      it "should work with globs" do
-        app = Yeager::App.new
-
-        called = false
-        last_page = String
-
-        app.get "*" do |req, res, continue|
-          req.params["page"]?.should be_nil
-          res.send TEXT
-          continue.call
-        end
-
-        app.get "*" do |req, res, continue|
-          called = true
-          continue.call
-        end
-
-        app.get "/:page?" do |req, res|
-          last_page = req.params["page"]?
-          res.send TEXT
-        end
-
-        server = HTTP::Server.new(HOST, PORT, [app.handler])
-        spawn do
-          server.listen
-        end
-
-        Fiber.yield
-
-        response = HTTP::Client.get "#{ROOT}/foo"
-        response.body.should eq(TEXT + TEXT)
-        last_page.should eq("foo")
-        called.should be_true
-
-        server.close
-      end
+      {% end %}
     end
   end
 end
