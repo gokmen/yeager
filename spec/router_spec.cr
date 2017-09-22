@@ -308,5 +308,123 @@ module Yeager
 
       r.run_multiple("/foo/123").should be_nil
     end
+
+    it "should support * glob pattern" do
+      r = Yeager::Router.new
+
+      r.add "/user/*"
+      r.add "/user/*/bar"
+      r.add "/blank/*/paper/*"
+
+      r.routes.should eq({
+        "/user/*"          => ["user", "*"],
+        "/user/*/bar"      => ["user", "*", "bar"],
+        "/blank/*/paper/*" => ["blank", "*", "paper", "*"],
+      })
+
+      r.run_multiple("/user/12").should eq([
+        {:path => "/user/*"},
+      ])
+
+      r.run_multiple("/user").should be_nil
+
+      r.run_multiple("/user/12/bar").should eq([
+        {:path => "/user/*"},
+        {:path => "/user/*/bar"},
+      ])
+      r.run_multiple("/user/foo/bar/baz/test").should eq([
+        {:path => "/user/*"},
+      ])
+      r.run_multiple("/user/foo/bak/bar").should eq([
+        {:path => "/user/*"},
+      ])
+
+      r.run_multiple("/users").should be_nil
+      r.run_multiple("/foo/123").should be_nil
+
+      r.run_multiple("/blank/foo/paper/bar").should eq([
+        {:path => "/blank/*/paper/*"},
+      ])
+      r.run_multiple("/blank/foo/paper").should be_nil
+      r.run_multiple("/blank/foo/paper/bar/baz/test").should eq([
+        {:path => "/blank/*/paper/*"},
+      ])
+      r.run_multiple("/blank/paper/bar/baz/test").should be_nil
+      r.run_multiple("/blank/paper").should be_nil
+    end
+
+    it "should support mixed features" do
+      r = Yeager::Router.new
+
+      r.add "/*"
+      r.add "/user/:id?"
+      r.add "/foo/:page?/*/:book?"
+      r.add "/create/*/:type?"
+
+      r.routes.should eq({
+        "/*"                   => ["*"],
+        "/user/:id?"           => ["user", ":id?"],
+        "/foo/:page?/*/:book?" => ["foo", ":page?", "*", ":book?"],
+        "/create/*/:type?"     => ["create", "*", ":type?"],
+      })
+
+      r.run_multiple("/user/12").should eq([
+        {
+          :path => "/*",
+        },
+        {
+          :path => "/user/:id?",
+          "id"  => "12",
+        },
+      ])
+
+      r.run_multiple("/foo/blank/bar/test").should eq([
+        {
+          :path => "/*",
+        },
+        {
+          :path  => "/foo/:page?/*/:book?",
+          "page" => "blank",
+          "book" => "test",
+        },
+      ])
+
+      r.run_multiple("/foo/bar/test").should eq([
+        {
+          :path => "/*",
+        },
+        {
+          :path  => "/foo/:page?/*/:book?",
+          "page" => "bar",
+          "book" => nil,
+        },
+      ])
+
+      r.run_multiple("/create/new/user").should eq([
+        {
+          :path => "/*",
+        },
+        {
+          :path  => "/create/*/:type?",
+          "type" => "user",
+        },
+      ])
+
+      r.run_multiple("/create/new").should eq([
+        {
+          :path => "/*",
+        },
+        {
+          :path  => "/create/*/:type?",
+          "type" => nil,
+        },
+      ])
+
+      r.run_multiple("/create/new/user/test").should eq([
+        {
+          :path => "/*",
+        },
+      ])
+    end
   end
 end

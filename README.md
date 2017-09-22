@@ -47,6 +47,13 @@ require "yeager"
 # Create the app
 app = Yeager::App.new
 
+# Add a glob handler to call before everything else
+# will print "A new visit!" for each request
+app.get "*" do |req, res, continue|
+  puts "A new visit!"
+  continue.call
+end
+
 # Add GET handler for "/" to response back with "Hello world!"
 app.get "/" do |req, res|
   res.send "Hello world!"
@@ -65,14 +72,15 @@ end
 ```
 
 You can checkout [specs](https://github.com/gokmen/yeager/blob/master/spec)
-for more examples and documentation can be accessed from [here](https://yeager.now.sh).
+for advanced examples and documentation can be accessed
+from [here](https://yeager.now.sh).
 
 ## Todo
 
 ### Router
 
  - ~~Add optional argument support like `/foo/:bar?`~~
- - Add glob support like `/foo/*`
+ - ~~Add glob support like `/foo/*`~~
 
 ### App
 

@@ -178,6 +178,43 @@ module Yeager
 
         server.close
       end
+
+      it "should work with globs" do
+        app = Yeager::App.new
+
+        called = false
+        last_page = String
+
+        app.get "*" do |req, res, continue|
+          req.params["page"]?.should be_nil
+          res.send TEXT
+          continue.call
+        end
+
+        app.get "*" do |req, res, continue|
+          called = true
+          continue.call
+        end
+
+        app.get "/:page?" do |req, res|
+          last_page = req.params["page"]?
+          res.send TEXT
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [app.handler])
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get "#{ROOT}/foo"
+        response.body.should eq(TEXT + TEXT)
+        last_page.should eq("foo")
+        called.should be_true
+
+        server.close
+      end
     end
   end
 end

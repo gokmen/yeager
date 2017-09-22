@@ -84,7 +84,7 @@ module Yeager
     def initialize(@routers : HTTPRouters, @handlers : HTTPHandlers)
     end
 
-    def call(ctx, index = 0)
+    def call(ctx, h_index = 0, p_index = 0)
       path, method = parse_request ctx
 
       if !@handlers.has_key? method
@@ -92,17 +92,25 @@ module Yeager
         return ctx
       end
 
-      if path && (params = @routers[method].run path)
-        ctx.request.params = params
-        handler = @handlers[method][params[:path]]
+      params = @routers[method].run_multiple path
+      if path && params && params.size > 0
+        ctx.request.params = params[p_index]
+        handler = @handlers[method][params[p_index][:path]]
         next_handler = NEXT_HANDLER
-        if handler.size > index + 1
+
+        if handler.size > h_index + 1
           next_handler = ->{
-            self.call(ctx, index + 1)
+            self.call(ctx, h_index + 1, p_index)
+            return
+          }
+        elsif params.size > p_index + 1
+          next_handler = ->{
+            self.call(ctx, 0, p_index + 1)
             return
           }
         end
-        handler[index].call ctx.request, ctx.response, next_handler
+
+        handler[h_index].call ctx.request, ctx.response, next_handler
         return ctx
       end
 
