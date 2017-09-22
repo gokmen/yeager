@@ -72,7 +72,7 @@ for more examples and documentation can be accessed from [here](https://yeager.n
 ### Router
 
  - ~~Add optional argument support like `/foo/:bar?`~~
- - Add glob support like `/foo/*`
+ - ~~Add glob support like `/foo/*`~~
 
 ### App
 
