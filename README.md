@@ -5,6 +5,7 @@ Simple router implementation w/ http server for Crystal, named after
 It supports basic router requirements with speed but not battle-tested.
 
 [![Build Status](https://img.shields.io/travis/gokmen/yeager/master.svg)](https://travis-ci.org/gokmen/yeager)
+[![Release Status](https://img.shields.io/github/release/gokmen/yeager.svg)](https://github.com/gokmen/yeager/releases)
 
 
 ## Installation
