@@ -55,6 +55,20 @@ module Yeager
       self.status_code = code
       self
     end
+
+    def redirect(code : String | Int32, route = nil)
+      if typeof(code) == String
+        route = code
+        code = 302
+      end
+
+      raise Exception.new "Route is required to redirect!" if route.nil?
+
+      self.status_code = code.as(Int32)
+      self.headers["Location"] = route
+
+      close
+    end
   end
 
   # HTTP handler for `Yeager::App` which will use the provided
