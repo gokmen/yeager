@@ -15,8 +15,8 @@ module Yeager
   # Default settings for `Yeager::App`s HTTP::Server
   DEFAULT_PORT    = 3000
   DEFAULT_HOST    = "0.0.0.0"
-  NOT_FOUND_TEXT  = "404 - Not found :("
-  NOT_IMPLEMENTED = "501 - Not implemented :("
+  NOT_FOUND_TEXT  = "Not Found"
+  NOT_IMPLEMENTED = "Not Implemented"
   NEXT_HANDLER    = ->{}
 
   # Extend HTTP::Server to add getter for `#host`
@@ -80,6 +80,12 @@ module Yeager
   #
   class HTTPHandler
     include HTTP::Handler
+
+    property options : Hash(String, String) = {
+      "not_found"       => NOT_FOUND_TEXT,
+      "not_implemented" => NOT_IMPLEMENTED,
+      "content_type"    => "text/plain",
+    }
 
     def initialize(@routers : HTTPRouters, @handlers : HTTPHandlers)
     end
