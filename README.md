@@ -1,12 +1,19 @@
 # Yeager
 
-Simple router implementation w/ http server for Crystal, named after
+Simple router implementation w/http handler for [Crystal][crystal], named after
 "Router Man" - [William Yeager](https://en.wikipedia.org/wiki/William_Yeager).
-It supports basic router requirements with speed but not battle-tested.
+It supports basic router requirements with speed.
+
+While the `Yeager::Router` provides a basic router functionality, `Yeager::App`
+aims to provide similar interface with [Express.js 4.x][express] on top of
+`Yeager::Router` and built-in [`HTTP`][crystal-http] module.
+
+[express]: https://expressjs.com
+[crystal]: https://crystal-lang.org
+[crystal-http]: https://crystal-lang.org/api/HTTP.html
 
 [![Build Status](https://img.shields.io/travis/gokmen/yeager/master.svg)](https://travis-ci.org/gokmen/yeager)
 [![Release Status](https://img.shields.io/github/release/gokmen/yeager.svg)](https://github.com/gokmen/yeager/releases)
-
 
 ## Installation
 
@@ -40,7 +47,7 @@ router.run "/bar"       # -> nil
 
 ```
 
-### WebServer with Yeager::App
+### Web application with `Yeager::App`
 
 ```crystal
 require "yeager"
@@ -58,6 +65,16 @@ end
 # Add GET handler for "/" to response back with "Hello world!"
 app.get "/" do |req, res|
   res.send "Hello world!"
+end
+
+# Redirect GET requests to "/google" to https://google.com
+app.get "/google" do |req, res|
+  res.redirect "https://google.com"
+end
+
+# Response with JSON on GET requests to "/json"
+app.get "/json" do |req, res|
+  res.status(200).json({"Hello" => "world!"})
 end
 
 # Add another GET handler for "/:user"
@@ -78,7 +95,7 @@ from [here](https://yeager.now.sh).
 
 ## Contributing
 
- 1. Fork it ( https://github.com/gokmen/yeager/fork )
+ 1. Fork it (https://github.com/gokmen/yeager/fork)
  2. Create your feature branch (`git checkout -b my-new-feature`)
  3. Commit your changes (`git commit -am 'Add some feature'`)
  4. Push to the branch (`git push origin my-new-feature`)
