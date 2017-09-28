@@ -137,6 +137,39 @@ module Yeager
 
           server.close
         end
+
+        it "should support redirect for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          app.{{ name.id }} "/" do |req, res|
+            res.redirect "/foo"
+          end
+
+          app.{{ name.id }} "/foo" do |req, res|
+            res.status(200).json({"Hello" => "foo"})
+          end
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT
+          response.status_code.should eq(302)
+          new_location = response.headers["Location"]
+          new_location.should eq("/foo")
+
+          response = HTTP::Client.{{ name.id }} "#{ROOT}#{new_location}"
+          {% if name.id != "head" %}
+          response.body.should eq("{\"Hello\":\"foo\"}")
+          {% end %}
+          response.status_code.should eq(200)
+
+          server.close
+        end
+
       {% end %}
     end
 

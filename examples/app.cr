@@ -6,6 +6,10 @@ app.get "/" do |req, res|
   res.send "Hello world!"
 end
 
+app.get "/google" do |req, res|
+  res.redirect "https://google.com"
+end
+
 app.post "/" do |_, res|
   res.status(200).json({"Hello" => "world!"})
 end
