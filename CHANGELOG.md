@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [v0.1.6](https://github.com/gokmen/yeager/compare/v0.1.5...v0.1.6) - 2017-09-28
+
+### Merged
+* Multiple handler support with lots of other improvements [`#7`](https://github.com/gokmen/yeager/pull/7)
+
+
 ## [v0.1.5](https://github.com/gokmen/yeager/compare/v0.1.4...v0.1.5) - 2017-09-22
 
 ### Merged
