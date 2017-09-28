@@ -229,6 +229,14 @@ module Yeager
       end
     {% end %}
 
+    {% begin %}
+    def all(path : String, &cb : Handler)
+      {% for name in HTTP_METHODS %}
+        register {{ name.upcase }}, path, &cb
+      {% end %}
+    end
+    {% end %}
+
     private def register(method : String, path : String, &cb : Handler)
       @handlers[method][path] ||= [] of Handler
       @handlers[method][path] << cb
