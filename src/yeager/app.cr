@@ -15,8 +15,8 @@ module Yeager
   # Default settings for `Yeager::App`s HTTP::Server
   DEFAULT_PORT    = 3000
   DEFAULT_HOST    = "0.0.0.0"
-  NOT_FOUND_TEXT  = "404 - Not found :("
-  NOT_IMPLEMENTED = "501 - Not implemented :("
+  NOT_FOUND_TEXT  = "Not Found"
+  NOT_IMPLEMENTED = "Not Implemented"
   NEXT_HANDLER    = ->{}
 
   # Extend HTTP::Server to add getter for `#host`
@@ -55,6 +55,20 @@ module Yeager
       self.status_code = code
       self
     end
+
+    def redirect(code : String | Int32, route = nil)
+      if typeof(code) == String
+        route = code
+        code = 302
+      end
+
+      raise Exception.new "Route is required to redirect!" if route.nil?
+
+      self.status_code = code.as(Int32)
+      self.headers["Location"] = route
+
+      close
+    end
   end
 
   # HTTP handler for `Yeager::App` which will use the provided
@@ -81,41 +95,64 @@ module Yeager
   class HTTPHandler
     include HTTP::Handler
 
+    property options : Hash(String, String) = {
+      "not_found"       => NOT_FOUND_TEXT,
+      "not_implemented" => NOT_IMPLEMENTED,
+      "content_type"    => "text/plain",
+    }
+
     def initialize(@routers : HTTPRouters, @handlers : HTTPHandlers)
     end
 
     def call(ctx, h_index = 0, p_index = 0)
       path, method = parse_request ctx
 
+      ctx.response.content_type = @options["content_type"]
+      ctx.response.headers.add "X-Powered-By",
+        "Crystal/Yeager #{Yeager::VERSION}"
+
       if !@handlers.has_key? method
-        ctx.response.status(501).send(NOT_IMPLEMENTED)
-        return ctx
+        return call_next ctx, 501, @options["not_implemented"]
       end
 
       params = @routers[method].run_multiple path
       if path && params && params.size > 0
         ctx.request.params = params[p_index]
         handler = @handlers[method][params[p_index][:path]]
-        next_handler = NEXT_HANDLER
+        continue = NEXT_HANDLER
 
         if handler.size > h_index + 1
-          next_handler = ->{
+          continue = ->{
             self.call(ctx, h_index + 1, p_index)
             return
           }
         elsif params.size > p_index + 1
-          next_handler = ->{
+          continue = ->{
             self.call(ctx, 0, p_index + 1)
+            return
+          }
+        elsif !@next.nil?
+          continue = ->{
+            @next.as(HTTP::Handler).call(ctx)
             return
           }
         end
 
-        handler[h_index].call ctx.request, ctx.response, next_handler
+        handler[h_index].call ctx.request, ctx.response, continue
         return ctx
       end
 
-      ctx.response.status(404).send(NOT_FOUND_TEXT)
-      ctx
+      call_next ctx
+    end
+
+    def call_next(context : HTTP::Server::Context,
+                  code = 404,
+                  text = @options["not_found"])
+      if next_handler = @next
+        next_handler.call(context)
+      else
+        context.response.status(code).send(text)
+      end
     end
 
     private def parse_request(ctx)
@@ -187,17 +224,17 @@ module Yeager
     end
 
     {% for name in HTTP_METHODS %}
-      def {{name.id}}(path : String, &cb : Proc(Void))
-        register {{ name.upcase }}, path, &cb
-      end
-
-      def {{name.id}}(path : String, &cb : HTTP::Request -> _)
-        register {{ name.upcase }}, path, &cb
-      end
-
       def {{name.id}}(path : String, &cb : Handler)
         register {{ name.upcase }}, path, &cb
       end
+    {% end %}
+
+    {% begin %}
+    def all(path : String, &cb : Handler)
+      {% for name in HTTP_METHODS %}
+        register {{ name.upcase }}, path, &cb
+      {% end %}
+    end
     {% end %}
 
     private def register(method : String, path : String, &cb : Handler)

@@ -46,6 +46,54 @@ module Yeager
           response.body.should eq(Yeager::NOT_FOUND_TEXT)
           {% end %}
 
+          custom_not_found = "not exists..."
+          app.handler.options["not_found"] = custom_not_found
+          response = HTTP::Client.{{ name.id }} "#{ROOT}/non_exist"
+          response.status_code.should eq(404)
+
+          {% if name.id != "head" %}
+          response.body.should eq(custom_not_found)
+          {% end %}
+
+          server.close
+        end
+      {% end %}
+    end
+
+    describe "#all handler" do
+      {% for name in Yeager::HTTP_METHODS %}
+        it "should work for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          app.all "/" do |req, res|
+            res.print TEXT
+          end
+
+          app.handler.class.should eq(Yeager::HTTPHandler)
+          app.routers[{{ name.upcase }}].class.should eq(Yeager::Router)
+          app.routers[{{ name.upcase }}].routes.should eq({"/" => ["/"]})
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT
+          response.status_code.should eq(200)
+
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT)
+          {% end %}
+
+          response = HTTP::Client.{{ name.id }} "#{ROOT}/non_exist"
+          response.status_code.should eq(404)
+
+          {% if name.id != "head" %}
+          response.body.should eq(Yeager::NOT_FOUND_TEXT)
+          {% end %}
+
           server.close
         end
       {% end %}
@@ -137,6 +185,39 @@ module Yeager
 
           server.close
         end
+
+        it "should support redirect for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          app.{{ name.id }} "/" do |req, res|
+            res.redirect "/foo"
+          end
+
+          app.{{ name.id }} "/foo" do |req, res|
+            res.status(200).json({"Hello" => "foo"})
+          end
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT
+          response.status_code.should eq(302)
+          new_location = response.headers["Location"]
+          new_location.should eq("/foo")
+
+          response = HTTP::Client.{{ name.id }} "#{ROOT}#{new_location}"
+          {% if name.id != "head" %}
+          response.body.should eq("{\"Hello\":\"foo\"}")
+          {% end %}
+          response.status_code.should eq(200)
+
+          server.close
+        end
+
       {% end %}
     end
 
@@ -243,6 +324,122 @@ module Yeager
         end
 
       {% end %}
+    end
+
+    describe "Not supported HTTP Methods" do
+      it "should handle not supported methods correctly" do
+        app1 = Yeager::App.new
+        app1.get "/" do |req, res|
+          res.send "hello"
+        end
+
+        # delete handlers for GET method
+        # so, it can continue with app2's handler
+        app1.handlers.delete "GET"
+
+        app2 = Yeager::App.new
+        app2.get "/" do |req, res|
+          res.send "hello from 2"
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [
+          app1.handler,
+          app2.handler,
+        ])
+
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.body.should eq("hello from 2")
+
+        app2.handlers.delete "GET"
+
+        response = HTTP::Client.get ROOT
+        response.body.should eq(Yeager::NOT_IMPLEMENTED)
+        response.status_code.should eq(501)
+
+        server.close
+      end
+    end
+
+    describe "Multiple Apps" do
+      it "should support chained applications" do
+        app1 = Yeager::App.new
+        app2 = Yeager::App.new
+
+        app1.get "/" do |req, res, continue|
+          res.send "1"
+          continue.call
+        end
+
+        app1.get "/" do |req, res, continue|
+          res.send "2"
+          continue.call
+        end
+
+        app1.get "/" do |req, res, continue|
+          res.send "3"
+          continue.call
+        end
+
+        app2.get "/" do |req, res|
+          res.send "4"
+        end
+
+        app2.get "/foo" do |req, res|
+          res.send "bar"
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [
+          app1.handler,
+          app2.handler,
+        ])
+
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.body.should eq("1234")
+
+        response = HTTP::Client.get "#{ROOT}/foo"
+        response.body.should eq("bar")
+
+        server.close
+      end
+
+      it "should work well with other handlers" do
+        app = Yeager::App.new
+
+        app.get "/" do |req, res|
+          raise Exception.new "test error"
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [
+          HTTP::ErrorHandler.new(verbose: true),
+          app.handler,
+        ])
+
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.status_code.should eq(500)
+
+        title, _ = response.body.split "\n"
+        title.should eq("ERROR: test error (Exception)")
+
+        server.close
+      end
     end
   end
 end
