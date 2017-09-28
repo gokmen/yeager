@@ -286,5 +286,80 @@ module Yeager
 
       {% end %}
     end
+    describe "Multiple Apps" do
+      it "should support chained applications" do
+        app1 = Yeager::App.new
+        app2 = Yeager::App.new
+
+        app1.get "/" do |req, res, continue|
+          res.send "1"
+          continue.call
+        end
+
+        app1.get "/" do |req, res, continue|
+          res.send "2"
+          continue.call
+        end
+
+        app1.get "/" do |req, res, continue|
+          res.send "3"
+          continue.call
+        end
+
+        app2.get "/" do |req, res|
+          res.send "4"
+        end
+
+        app2.get "/foo" do |req, res|
+          res.send "bar"
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [
+          app1.handler,
+          app2.handler,
+        ])
+
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.body.should eq("1234")
+
+        response = HTTP::Client.get "#{ROOT}/foo"
+        response.body.should eq("bar")
+
+        server.close
+      end
+
+      it "should work well with other handlers" do
+        app = Yeager::App.new
+
+        app.get "/" do |req, res|
+          raise Exception.new "test error"
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [
+          HTTP::ErrorHandler.new(verbose: true),
+          app.handler,
+        ])
+
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.status_code.should eq(500)
+
+        title, _ = response.body.split "\n"
+        title.should eq("ERROR: test error (Exception)")
+
+        server.close
+      end
+    end
   end
 end
