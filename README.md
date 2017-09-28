@@ -76,20 +76,6 @@ You can checkout [specs](https://github.com/gokmen/yeager/blob/master/spec)
 for advanced examples and documentation can be accessed
 from [here](https://yeager.now.sh).
 
-## Todo
-
-### Router
-
- - ~~Add optional argument support like `/foo/:bar?`~~
- - ~~Add glob support like `/foo/*`~~
-
-### App
-
- - Add middleware support
- - ~~Add chain handlers support with a.k.a `next`~~
- - Add parse form data support
- - Handle WebSocket requests
-
 ## Contributing
 
  1. Fork it ( https://github.com/gokmen/yeager/fork )
