@@ -60,6 +60,45 @@ module Yeager
       {% end %}
     end
 
+    describe "#all handler" do
+      {% for name in Yeager::HTTP_METHODS %}
+        it "should work for {{ name.id.upcase }}" do
+          app = Yeager::App.new
+
+          app.all "/" do |req, res|
+            res.print TEXT
+          end
+
+          app.handler.class.should eq(Yeager::HTTPHandler)
+          app.routers[{{ name.upcase }}].class.should eq(Yeager::Router)
+          app.routers[{{ name.upcase }}].routes.should eq({"/" => ["/"]})
+
+          server = HTTP::Server.new(HOST, PORT, [app.handler])
+          spawn do
+            server.listen
+          end
+
+          Fiber.yield
+
+          response = HTTP::Client.{{ name.id }} ROOT
+          response.status_code.should eq(200)
+
+          {% if name.id != "head" %}
+          response.body.should eq(TEXT)
+          {% end %}
+
+          response = HTTP::Client.{{ name.id }} "#{ROOT}/non_exist"
+          response.status_code.should eq(404)
+
+          {% if name.id != "head" %}
+          response.body.should eq(Yeager::NOT_FOUND_TEXT)
+          {% end %}
+
+          server.close
+        end
+      {% end %}
+    end
+
     describe "Response" do
       {% for name in Yeager::HTTP_METHODS %}
 
