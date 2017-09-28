@@ -286,6 +286,47 @@ module Yeager
 
       {% end %}
     end
+
+    describe "Not supported HTTP Methods" do
+      it "should handle not supported methods correctly" do
+        app1 = Yeager::App.new
+        app1.get "/" do |req, res|
+          res.send "hello"
+        end
+
+        # delete handlers for GET method
+        # so, it can continue with app2's handler
+        app1.handlers.delete "GET"
+
+        app2 = Yeager::App.new
+        app2.get "/" do |req, res|
+          res.send "hello from 2"
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [
+          app1.handler,
+          app2.handler,
+        ])
+
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.body.should eq("hello from 2")
+
+        app2.handlers.delete "GET"
+
+        response = HTTP::Client.get ROOT
+        response.body.should eq(Yeager::NOT_IMPLEMENTED)
+        response.status_code.should eq(501)
+
+        server.close
+      end
+    end
+
     describe "Multiple Apps" do
       it "should support chained applications" do
         app1 = Yeager::App.new
