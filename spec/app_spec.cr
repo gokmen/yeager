@@ -46,6 +46,15 @@ module Yeager
           response.body.should eq(Yeager::NOT_FOUND_TEXT)
           {% end %}
 
+          custom_not_found = "not exists..."
+          app.handler.options["not_found"] = custom_not_found
+          response = HTTP::Client.{{ name.id }} "#{ROOT}/non_exist"
+          response.status_code.should eq(404)
+
+          {% if name.id != "head" %}
+          response.body.should eq(custom_not_found)
+          {% end %}
+
           server.close
         end
       {% end %}
