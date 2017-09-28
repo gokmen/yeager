@@ -224,14 +224,6 @@ module Yeager
     end
 
     {% for name in HTTP_METHODS %}
-      def {{name.id}}(path : String, &cb : Proc(Void))
-        register {{ name.upcase }}, path, &cb
-      end
-
-      def {{name.id}}(path : String, &cb : HTTP::Request -> _)
-        register {{ name.upcase }}, path, &cb
-      end
-
       def {{name.id}}(path : String, &cb : Handler)
         register {{ name.upcase }}, path, &cb
       end
