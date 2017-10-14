@@ -110,8 +110,6 @@ module Yeager
       path, method = parse_request ctx
 
       ctx.response.content_type = @options["content_type"]
-      ctx.response.headers.add "X-Powered-By",
-        "Crystal/Yeager #{Yeager::VERSION}"
 
       if !@handlers.has_key? method
         return call_next ctx, 501, @options["not_implemented"]
@@ -222,6 +220,11 @@ module Yeager
       @routers = HTTPRouters.new
       @runners = Array(Handler).new
       @handler = HTTPHandler.new(@routers, @handlers, @runners)
+
+      use do |req, res, continue|
+        res.headers.add "X-Powered-By", "Crystal/Yeager #{Yeager::VERSION}"
+        continue.call
+      end
 
       {% for name in HTTP_METHODS %}
         @routers[{{ name.upcase }}] = Yeager::Router.new
