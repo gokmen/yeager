@@ -83,6 +83,12 @@ app.get "/:user" do |req, res|
   res.send "Hello #{req.params["user"]}!"
 end
 
+# Enable CORS
+app.use do |req, res, continue|
+  res.headers.add "Access-Control-Allow-Origin", "*"
+  continue.call
+end
+
 # Start the app on port 3000
 app.listen 3000 do
   print "Example app listening on 0.0.0.0:3000!"

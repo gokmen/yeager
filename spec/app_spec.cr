@@ -441,5 +441,53 @@ module Yeager
         server.close
       end
     end
+
+    describe "Middlewares" do
+      it "should support #use directive for middlewares" do
+        app = Yeager::App.new
+
+        called_1 = false
+        called_2 = false
+
+        app.use do |req, res, continue|
+          req.env["test_1"] = "test_1"
+          called_1 = true
+          continue.call
+        end
+
+        app.get "/" do |req, res|
+          res.send "ok"
+        end
+
+        app.get "/foo" do |req, res|
+          res.send req.env["test_1"] + req.env["test_2"]
+        end
+
+        app.use do |req, res, continue|
+          req.env["test_2"] = "test_2"
+          called_2 = true
+          continue.call
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [app.handler])
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get ROOT
+        response.status_code.should eq(200)
+
+        response = HTTP::Client.get "#{ROOT}/foo"
+        response.status_code.should eq(200)
+        response.body.should eq("test_1test_2")
+
+        called_1.should be_true
+        called_2.should be_true
+
+        server.close
+      end
+    end
   end
 end
