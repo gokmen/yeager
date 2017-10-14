@@ -101,7 +101,9 @@ module Yeager
       "content_type"    => "text/plain",
     }
 
-    def initialize(@routers : HTTPRouters, @handlers : HTTPHandlers)
+    def initialize(@routers : HTTPRouters,
+                   @handlers : HTTPHandlers,
+                   @runners : Array(Handler))
     end
 
     def call(ctx, h_index = 0, p_index = 0)
@@ -118,7 +120,10 @@ module Yeager
       params = @routers[method].run_multiple path
       if path && params && params.size > 0
         ctx.request.params = params[p_index]
+
         handler = @handlers[method][params[p_index][:path]]
+        handler = @runners + handler if @runners.size > 0
+
         continue = NEXT_HANDLER
 
         if handler.size > h_index + 1
@@ -215,7 +220,8 @@ module Yeager
 
     def initialize
       @routers = HTTPRouters.new
-      @handler = HTTPHandler.new(@routers, @handlers)
+      @runners = Array(Handler).new
+      @handler = HTTPHandler.new(@routers, @handlers, @runners)
 
       {% for name in HTTP_METHODS %}
         @routers[{{ name.upcase }}] = Yeager::Router.new
@@ -236,6 +242,10 @@ module Yeager
       {% end %}
     end
     {% end %}
+
+    def use(&cb : Handler)
+      @runners << cb
+    end
 
     private def register(method : String, path : String, &cb : Handler)
       @handlers[method][path] ||= [] of Handler
