@@ -18,6 +18,15 @@ app.get "/:name" do |req, res|
   res.send "Hello sub world! #{req.params["name"]}"
 end
 
+# Enable CORS
+# Even though it's defined at the end this handler will be
+# called before all the handlers. Multiple use handlers
+# can be defined which will be called sequentially.
+app.use do |req, res, continue|
+  res.headers.add "Access-Control-Allow-Origin", "*"
+  continue.call
+end
+
 # If you have a defined HTTP::Server already you can
 # use app.handler after this point instead of running
 # the server of the app.
