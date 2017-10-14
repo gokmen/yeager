@@ -32,14 +32,14 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} ROOT
+          response = HTTP::Client.exec "{{ name.id.upcase }}", ROOT
           response.status_code.should eq(200)
 
           {% if name.id != "head" %}
           response.body.should eq(TEXT)
           {% end %}
 
-          response = HTTP::Client.{{ name.id }} "#{ROOT}/non_exist"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", "#{ROOT}/non_exist"
           response.status_code.should eq(404)
 
           {% if name.id != "head" %}
@@ -48,7 +48,7 @@ module Yeager
 
           custom_not_found = "not exists..."
           app.handler.options["not_found"] = custom_not_found
-          response = HTTP::Client.{{ name.id }} "#{ROOT}/non_exist"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", "#{ROOT}/non_exist"
           response.status_code.should eq(404)
 
           {% if name.id != "head" %}
@@ -80,14 +80,14 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} ROOT
+          response = HTTP::Client.exec "{{ name.id.upcase }}", ROOT
           response.status_code.should eq(200)
 
           {% if name.id != "head" %}
           response.body.should eq(TEXT)
           {% end %}
 
-          response = HTTP::Client.{{ name.id }} "#{ROOT}/non_exist"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", "#{ROOT}/non_exist"
           response.status_code.should eq(404)
 
           {% if name.id != "head" %}
@@ -116,7 +116,7 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} ROOT
+          response = HTTP::Client.exec "{{ name.id.upcase }}", ROOT
           {% if name.id != "head" %}
           response.body.should eq(TEXT)
           {% end %}
@@ -138,7 +138,7 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} ROOT
+          response = HTTP::Client.exec "{{ name.id.upcase }}", ROOT
           {% if name.id != "head" %}
           response.body.should eq("{\"Hello\":\"world!\"}")
           {% end %}
@@ -171,13 +171,13 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} "#{ROOT}/200"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", "#{ROOT}/200"
           {% if name.id != "head" %}
           response.body.should eq(TEXT)
           {% end %}
           response.status_code.should eq(200)
 
-          response = HTTP::Client.{{ name.id }} "#{ROOT}/404"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", "#{ROOT}/404"
           {% if name.id != "head" %}
           response.body.should eq(TEXT)
           {% end %}
@@ -204,12 +204,12 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} ROOT
+          response = HTTP::Client.exec "{{ name.id.upcase }}", ROOT
           response.status_code.should eq(302)
           new_location = response.headers["Location"]
           new_location.should eq("/foo")
 
-          response = HTTP::Client.{{ name.id }} "#{ROOT}#{new_location}"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", "#{ROOT}#{new_location}"
           {% if name.id != "head" %}
           response.body.should eq("{\"Hello\":\"foo\"}")
           {% end %}
@@ -238,7 +238,7 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} ROOT + "/Yeager"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", ROOT + "/Yeager"
           {% if name.id != "head" %}
           response.body.should eq(TEXT + "Yeager")
           {% end %}
@@ -276,7 +276,7 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} ROOT
+          response = HTTP::Client.exec "{{ name.id.upcase }}", ROOT
           {% if name.id != "head" %}
           response.body.should eq(TEXT + TEXT)
           {% end %}
@@ -313,7 +313,7 @@ module Yeager
 
           Fiber.yield
 
-          response = HTTP::Client.{{ name.id }} "#{ROOT}/foo"
+          response = HTTP::Client.exec "{{ name.id.upcase }}", "#{ROOT}/foo"
           {% if name.id != "head" %}
           response.body.should eq(TEXT + TEXT)
           {% end %}

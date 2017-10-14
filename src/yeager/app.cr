@@ -10,7 +10,7 @@ module Yeager
   private alias HTTPHandlers = Hash(String, Handlers)
 
   # Supported HTTP methods of `Yeager::HTTPHandler`
-  HTTP_METHODS = %w(get post put head patch delete)
+  HTTP_METHODS = %w(get post put head patch delete options)
 
   # Default settings for `Yeager::App`s HTTP::Server
   DEFAULT_PORT    = 3000
