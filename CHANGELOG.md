@@ -1,10 +1,24 @@
 # Changelog
 
+## [v0.1.8](https://github.com/gokmen/yeager/compare/v0.1.7...v0.1.8) - 2017-10-13
 
-## [v0.1.6](https://github.com/gokmen/yeager/compare/v0.1.5...v0.1.6) - 2017-09-28
+### Merged
+* Generic middleware support [`#9`](https://github.com/gokmen/yeager/pull/9)
+
+
+## [v0.1.7](https://github.com/gokmen/yeager/compare/v0.1.6...v0.1.7) - 2017-10-13
+
+### Merged
+* Add HTTP Handler for OPTIONS method [`#8`](https://github.com/gokmen/yeager/pull/8)
 
 ### Merged
 * Multiple handler support with lots of other improvements [`#7`](https://github.com/gokmen/yeager/pull/7)
+
+
+## [v0.1.6](https://github.com/gokmen/yeager/compare/v0.1.5...v0.1.6) - 2017-09-28
+
+### Commits
+* Spec: handle multiple application and chained handlers cases [`0b3a08b`](https://github.com/gokmen/yeager/commit/0b3a08b5db0ed6ebc4a6e33a5217350c5211663e)
 
 
 ## [v0.1.5](https://github.com/gokmen/yeager/compare/v0.1.4...v0.1.5) - 2017-09-22
