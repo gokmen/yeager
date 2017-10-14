@@ -442,8 +442,8 @@ module Yeager
       end
     end
 
-    describe "Middlewares" do
-      it "should support #use directive for middlewares" do
+    describe "Middleware" do
+      it "should support #use directive for middleware" do
         app = Yeager::App.new
 
         called_1 = false
@@ -485,6 +485,50 @@ module Yeager
 
         called_1.should be_true
         called_2.should be_true
+
+        server.close
+      end
+
+      it "should call each middleware once per route" do
+        app = Yeager::App.new
+
+        mw_counter = 0
+        ro_counter = 0
+
+        app.use do |req, res, continue|
+          mw_counter += 1
+          continue.call
+        end
+
+        app.get "*" do |req, res, continue|
+          ro_counter += 1
+          res.send "ok"
+          continue.call
+        end
+
+        app.get "/bar" do |req, res|
+          ro_counter += 1
+          res.send "ok"
+        end
+
+        server = HTTP::Server.new(HOST, PORT, [app.handler])
+        spawn do
+          server.listen
+        end
+
+        Fiber.yield
+
+        response = HTTP::Client.get "#{ROOT}/bar"
+        response.status_code.should eq(200)
+
+        mw_counter.should eq(1)
+        ro_counter.should eq(2)
+
+        response = HTTP::Client.get "#{ROOT}/bar"
+        response.status_code.should eq(200)
+
+        mw_counter.should eq(2)
+        ro_counter.should eq(4)
 
         server.close
       end

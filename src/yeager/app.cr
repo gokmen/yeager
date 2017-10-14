@@ -120,7 +120,7 @@ module Yeager
         ctx.request.params = params[p_index]
 
         handler = @handlers[method][params[p_index][:path]]
-        handler = @runners + handler if @runners.size > 0
+        handler = @runners + handler if @runners.size > 0 && p_index == 0
 
         continue = NEXT_HANDLER
 
