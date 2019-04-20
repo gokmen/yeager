@@ -1,3 +1,7 @@
+**Archived project. No maintenance.**
+
+This project is not maintained anymore and is archived. Feel free to fork and make your own changes if needed.
+
 # Yeager
 
 Simple router implementation w/http handler for [Crystal][crystal], named after
